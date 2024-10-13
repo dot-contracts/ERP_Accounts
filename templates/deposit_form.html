@@ -1,0 +1,29 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Form</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>Deposit Form</h1>
+        <form method="post" action="{% url 'submit_deposit' %}">
+            {% csrf_token %}
+            <div>
+                <label for="amount">Amount:</label>
+                <input type="number" name="amount" id="amount" required>
+            </div>
+            <div>
+                <label for="transaction_code">Transaction Code:</label>
+                <input type="text" name="transaction_code" id="transaction_code" required>
+            </div>
+            <div>
+                <button type="submit">Submit Deposit</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

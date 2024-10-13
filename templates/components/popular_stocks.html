@@ -1,0 +1,42 @@
+<div class="card white">
+    <div class="card-header">
+        <h3>Popular Stocks</h3>
+        <i class="fas fa-ellipsis-v"></i>
+    </div>
+    <ul class="stock-list">
+        <li>
+            <div class="stock-info">
+                <span class="stock-name">Bajaj Finery</span>
+                <span class="stock-change positive">10% Profit</span>
+            </div>
+            <span class="stock-price">$1839.00</span>
+        </li>
+        <!-- Add more stock items -->
+    </ul>
+</div>
+
+<style>
+    .stock-list {
+        list-style-type: none;
+        padding: 0;
+    }
+    .stock-list li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .stock-name {
+        font-weight: bold;
+    }
+    .stock-change {
+        font-size: 12px;
+    }
+    .positive {
+        color: green;
+    }
+    .negative {
+        color: red;
+    }
+</style>

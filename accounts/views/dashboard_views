@@ -1,0 +1,128 @@
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Sum
+from django.utils import timezone
+from ..models import Order, Deposit
+import pandas as pd
+import datetime
+
+@login_required
+def manager_dashboard(request):
+    if request.user.role.name == 'Branch Manager' and request.user.branch:
+        today = timezone.now().date()
+        first_day_of_month = today.replace(day=1)
+        yesterday = today - timezone.timedelta(days=1)
+
+        date_filter = request.GET.get('date')
+        waybill_number_filter = request.GET.get('wno')
+
+        orders = Order.objects.filter(location=request.user.branch.name).order_by('-date')
+
+        paginator = Paginator(orders, 10)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        total_revenue = Order.objects.filter(
+            location=request.user.branch.name,
+            date__gte=first_day_of_month
+        ).aggregate(Sum('cod'))['cod__sum'] or 0
+
+        yesterday_orders = Order.objects.filter(
+            location=request.user.branch.name,
+            date=yesterday
+        )
+        yesterday_total = yesterday_orders.aggregate(Sum('cod'))['cod__sum'] or 0
+
+        previous_month = today.replace(day=1) - timezone.timedelta(days=1)
+        first_day_of_previous_month = previous_month.replace(day=1)
+        last_day_of_previous_month = previous_month
+
+        previous_month_total = Order.objects.filter(
+            location=request.user.branch.name,
+            date__gte=first_day_of_previous_month,
+            date__lte=last_day_of_previous_month
+        ).aggregate(Sum('cod'))['cod__sum'] or 0
+
+        total_deposits = Deposit.objects.filter(
+            date__month=today.month,
+            date__year=today.year
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+        months_closing_balance = (total_revenue - previous_month_total) + total_deposits
+
+        stats = [
+            {'label': "Month's Total Revenue", 'value': total_revenue, 'color': '#0ea5e9'},
+            {'label': "Yesterday's Closing Balance", 'value': yesterday_total, 'color': '#a855f7'},
+            {'label': "Month's Closing Balance", 'value': months_closing_balance, 'color': '#f59e0b'},
+        ]
+
+        return render(request, 'manager_dashboard.html', {
+            'page_obj': page_obj,
+            'stats': stats,
+            'date_filter': date_filter,
+            'waybill_number_filter': waybill_number_filter
+        })
+    else:
+        orders = Order.objects.none()
+
+    return render(request, 'manager_dashboard.html', {'orders': orders})
+
+def employee_dashboard(request):
+    return render(request, 'employee_dashboard.html')
+
+def is_admin(user):
+    return user.is_authenticated and user.role and user.role.name == 'Admin'
+
+@login_required
+@user_passes_test(is_admin)
+def admin_dashboard(request):
+    orders = Order.objects.all().order_by('-date')
+    print(f"Number of orders: {orders.count()}")  # Debug print
+    return render(request, 'admin_dashboard.html', {'orders': orders})
+
+@login_required
+@user_passes_test(is_admin)
+def upload_excel(request):
+    if request.method == 'POST':
+        if 'excel_file' not in request.FILES:
+            messages.error(request, 'No file was uploaded.')
+            return redirect('admin_dashboard')
+        
+        excel_file = request.FILES['excel_file']
+        try:
+            df = pd.read_excel(excel_file)
+            print(f"DataFrame shape: {df.shape}")
+            print(f"DataFrame columns: {df.columns}")
+            for index, row in df.iterrows():
+                try:
+                    date_str = row['Date']
+                    if isinstance(date_str, str):
+                        day, month, year = map(int, date_str.split('_'))
+                        date_obj = datetime.date(year, month, day)
+                    else:
+                        date_obj = date_str
+
+                    order = Order.objects.create(
+                        wno=row['W/NO.'],
+                        from_field=row['From:'],
+                        qty=row['QTY:'],
+                        cod=row['COD:'] if pd.notna(row['COD:']) else None,
+                        collected=row['Collected:'] if pd.notna(row['Collected:']) else None,
+                        deficit=row['Deficit:'] if pd.notna(row['Deficit:']) else None,
+                        contract=row['Contract:'] if pd.notna(row['Contract:']) else None,
+                        paid=row['Paid:'] if pd.notna(row['Paid:']) else None,
+                        received_by=row['Received by:'],
+                        date=date_obj,
+                        location=row['Location']
+                    )
+                    print(f"Created order: {order}")
+                except Exception as e:
+                    print(f"Error creating order at row {index}: {str(e)}")
+                    print(f"Row data: {row}")
+            messages.success(request, f'Excel file uploaded and processed successfully. {df.shape[0]} orders created.')
+        except Exception as e:
+            messages.error(request, f'Error processing Excel file: {str(e)}')
+        
+    return redirect('admin_dashboard')

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="dashboard-container d-flex">
+    <div class="sidebar bg-light">
+        {% include "components/sidebar.html" %}
+    </div>
+    <div class="main-content flex-grow-1">
+        <div class="top-bar">
+            {% include "components/topbar.html" %}
+        </div>
+        <div class="dashboard-grid container-fluid py-4">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    {% include "components/total_earning_card.html" %}
+                </div>
+                <div class="col-md-4">
+                    {% include "components/total_order_card.html" %}
+                </div>
+                <div class="col-md-4">
+                    {% include "components/total_income_card.html" %}
+                </div>
+            </div>76
+            
+            <div class="row g-4 mt-4">
+                <div class="col-md-8">
+                    {% include "components/total_growth_chart.html" %}
+                </div>
+                <div class="col-md-4">
+                    {% include "components/popular_stocks.html" %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
