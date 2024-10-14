@@ -1,0 +1,64 @@
+<div class="card white">
+    <div class="card-header">
+        <h3>Total Sales by Location</h3>
+        <p>Sales Summary</p>
+    </div>
+    <div class="chart">
+        <table class="sales-table">
+            <thead>
+                <tr>
+                    <th>Location</th>
+                    <th>Total Sales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if total_sales_by_location %}
+                    {% for entry in total_sales_by_location %}
+                    <tr>
+                        <td>{{ entry.location }}</td>
+                        <td>Kshs {{ entry.total_sales|floatformat:2 }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="2">No sales data found.</td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+     .card.white {
+        background-color: white;
+        color: #333;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        overflow: auto; /* Allow scrolling if content overflows */
+        max-width: 100%; /* Ensure the card does not exceed the width of its container */
+        border-radius: 0.5rem; /* Optional: Add some border radius */
+    }
+
+    .sales-table {
+        width: 100%; /* Ensure the table takes full width of the card */
+        border-collapse: collapse;
+        margin-top: 1rem;
+        min-width: 600px; /* Set a minimum width for the table */
+    }
+
+    .sales-table th,
+    .sales-table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .sales-table th {
+        background-color: #f9fafb;
+        font-weight: 500;
+    }
+
+    .sales-table tr:hover {
+        background-color: #f1f5f9; /* Light gray on hover */
+    }
+</style>

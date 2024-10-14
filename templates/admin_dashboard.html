@@ -2,6 +2,80 @@
 {% load static %}
 
 {% block content %}
+<style>
+    /* Table Styles */
+    .orders-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+    }
+
+    .orders-table th,
+    .orders-table td {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .orders-table th {
+        background-color: #f9fafb;
+        font-weight: 500;
+    }
+
+    .orders-table tr:hover {
+        background-color: #f1f5f9; /* Light gray on hover */
+    }
+
+    /* Pagination Styles */
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 1rem;
+        padding: 1rem 0;
+    }
+
+    .pagination-links {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .pagination-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid var(--primary-blue);
+        border-radius: 0.375rem;
+        background-color: white;
+        color: var(--primary-blue);
+        text-decoration: none;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .pagination-button:hover {
+        background-color: var(--primary-blue);
+        color: white;
+    }
+
+    .current-page {
+        padding: 0.5rem 1rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.375rem;
+        background-color: #f9fafb;
+        color: #374151; /* Dark gray */
+    }
+    .btn-success {
+        background-color: #28a745; /* Green */
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .btn-success:hover {
+        background-color: #218838; /* Darker green */
+    }
+</style>
 <div class="dashboard-container d-flex">
     <div class="sidebar bg-light">
         {% include "components/sidebar.html" %}
@@ -13,22 +87,96 @@
         <div class="dashboard-grid container-fluid py-4">
             <div class="row g-4">
                 <div class="col-md-4">
-                    {% include "components/total_earning_card.html" %}
+                    {% include "components/total_revenue_card.html" %}
                 </div>
                 <div class="col-md-4">
-                    {% include "components/total_order_card.html" %}
+                    {% include "components/total_orders_card.html" %}
                 </div>
                 <div class="col-md-4">
                     {% include "components/total_income_card.html" %}
                 </div>
-            </div>76
-            
+            </div>
             <div class="row g-4 mt-4">
                 <div class="col-md-8">
-                    {% include "components/total_growth_chart.html" %}
+                    {% include "components/orders_chart.html" %}
                 </div>
                 <div class="col-md-4">
-                    {% include "components/popular_stocks.html" %}
+                    {% include "components/popular_orders.html" %}
+                </div>
+            </div>
+            <div class="row g-4 mt-4">
+                <div class="col-12">
+                    <div class="table-filters">
+                        <form method="get" action="">
+                            <input type="date" class="filter-input" name="date" placeholder="Search by Date" value="{{ date_filter }}">
+                            <input type="text" class="filter-input" name="waybill_number" placeholder="Search by W/NO" value="{{ waybill_number_filter }}">
+                            <button type="submit" class="btn btn-primary">Filter</button>
+                        </form>
+                        
+                        <!-- File Upload Form -->
+                        <form method="post" action="{% url 'upload_excel' %}" enctype="multipart/form-data" style="display: inline-block; margin-left: auto;">
+                            {% csrf_token %}
+                            <input type="file" name="excel_file" accept=".xls,.xlsx" required>
+                            <button type="submit" class="btn btn-success">Upload Excel</button>
+                        </form>
+                        
+                        <button id="openDepositModal" class="upload-btn">Add Deposit</button>
+                    </div>
+                    <h3>Recent Orders</h3>
+                    <table class="orders-table">
+                        <thead>
+                            <tr>
+                                <th>W/NO.</th>
+                                <th>From:</th>
+                                <th>QTY.</th>
+                                <th>COD</th>
+                                <th>Collected</th>
+                                <th>Deficit</th>
+                                <th>Contract</th>
+                                <th>Paid</th>
+                                <th>Received by</th>
+                                <th>Date</th>
+                                <th>Location</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td>{{ order.wno }}</td>
+                                <td>{{ order.from_field }}</td>
+                                <td>{{ order.qty }}</td>
+                                <td>{{ order.cod }}</td>
+                                <td>{{ order.collected }}</td>
+                                <td>{{ order.deficit }}</td>
+                                <td>{{ order.contract }}</td>
+                                <td>{{ order.paid }}</td>
+                                <td>{{ order.received_by }}</td>
+                                <td>{{ order.date }}</td>
+                                <td>{{ order.location }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="11">No orders found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <!-- Pagination Controls -->
+                    <div class="pagination">
+                        <span>Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+                        <div>
+                            {% if orders.has_previous %}
+                                <a href="?page=1">First</a>
+                                <a href="?page={{ orders.previous_page_number }}">Previous</a>
+                            {% endif %}
+                            <span>Page {{ orders.number }} of {{ orders.paginator.num_pages }}</span>
+                            {% if orders.has_next %}
+                                <a href="?page={{ orders.next_page_number }}">Next</a>
+                                <a href="?page={{ orders.paginator.num_pages }}">Last</a>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
